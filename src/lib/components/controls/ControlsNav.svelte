@@ -5,6 +5,7 @@
 	import ConnectionPanel, { feedStates } from './ConnectionPanel.svelte';
 	import RangeInput from './RangeInput.svelte';
 	import SetFundraisingEvent from './SetFundraisingEvent.svelte';
+	import RtdServerPicker from './RtdServerPicker.svelte';
 	import { fundraisingState, settings } from '$lib/storage.svelte';
 	import { obsConnect, obsStatus } from '$lib/websockets/obs/ws-obs.svelte';
 	import { connectGameServer, gameServer } from '$lib/game-server.svelte';
@@ -319,6 +320,7 @@
 				>
 					<!-- also under fundraising and in the page's automation section -->
 					<Checkbox desc="enable fundraising RTD" setting="enableFundraisingRtd" />
+					<RtdServerPicker />
 				</ConnectionPanel>
 			{:else if openStatus === 'fundraising'}
 				<SetFundraisingEvent>

@@ -60,6 +60,7 @@ export const defaultSettings: Settings = {
 	scheduleDay: 0,
 	jfRelayWebSocketToken: '',
 	jfGameServerToken: '',
+	rtdTargetServers: [],
 	logWsMessages: false,
 	overlayScene: 'DualPovMatchScene',
 	idleObsScene: 'Idle',

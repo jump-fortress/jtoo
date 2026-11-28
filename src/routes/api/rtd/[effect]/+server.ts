@@ -13,10 +13,16 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		return new Response(`'${effect}' is not an rtd effect`, { status: 400 });
 	}
 
+	// the servers' tags (eg: AU-SYD1), comma separated. none: every server
+	const targets = (url.searchParams.get('targets') ?? '').split(',').filter(Boolean);
+	if (targets.some((t) => !/^[A-Za-z0-9_-]+$/.test(t))) {
+		return new Response(`invalid server tag in '${targets.join(',')}'`, { status: 400 });
+	}
+
 	if (!(await connectGameServer(token))) {
 		return new Response('invalid token', { status: 401 });
 	}
 
-	queueRtdEffect(effect);
+	queueRtdEffect(effect, targets);
 	return new Response(null, { status: 204 });
 };

@@ -5,7 +5,7 @@ import { JfRtdWebSocket } from '$lib/websockets/jf-rtd/jf-rtd.svelte';
 // connection check (/api/rtd) and the effects (/api/rtd/[effect])
 
 const jfRtdWs = new JfRtdWebSocket();
-const effectQueue: string[] = [];
+const effectQueue: { effect: string; targets: string[] }[] = [];
 const secondsBetweenEffects = 1;
 let processingQueue = false;
 let connectedToken: string | undefined;
@@ -28,9 +28,12 @@ export async function connectGameServer(token: string): Promise<boolean> {
 	});
 }
 
-/** Sends the effect once the ones before it are out, a few seconds apart. */
-export function queueRtdEffect(effect: string) {
-	effectQueue.push(effect);
+/**
+ * Sends the effect to the servers with these tags (every server without any), once the ones
+ * before it are out, a few seconds apart.
+ */
+export function queueRtdEffect(effect: string, targets: string[] = []) {
+	effectQueue.push({ effect, targets });
 	processQueue();
 }
 
@@ -39,8 +42,8 @@ async function processQueue() {
 
 	processingQueue = true;
 	while (effectQueue.length > 0) {
-		const effect = effectQueue.shift();
-		jfRtdWs.sendRtdEffect(effect!);
+		const { effect, targets } = effectQueue.shift()!;
+		jfRtdWs.sendRtdEffect(effect, targets);
 		await sleep(secondsBetweenEffects * 1000);
 	}
 

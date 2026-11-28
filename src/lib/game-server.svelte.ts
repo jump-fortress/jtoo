@@ -39,6 +39,34 @@ export async function connectGameServer() {
 	}
 }
 
+type GameServerInfo = { tag: string; name: string };
+
+// the event's game servers, which RTD effects can be sent to. the console reads the same list
+export const rtdServers = $state<{ list: GameServerInfo[]; error: string; loading: boolean }>({
+	list: [],
+	error: '',
+	loading: false
+});
+
+/** Fetches the list of game servers. */
+export async function loadRtdServers() {
+	rtdServers.loading = true;
+	try {
+		const resp = await fetch('https://static.jumpfortress.tf/cfg/servers.json', {
+			cache: 'no-store'
+		});
+		if (!resp.ok) throw new Error(`${resp.status}`);
+		const { servers } = (await resp.json()) as { servers?: GameServerInfo[] };
+		if (!servers?.length) throw new Error('no servers listed');
+		rtdServers.list = servers.map(({ tag, name }) => ({ tag, name }));
+		rtdServers.error = '';
+	} catch (e) {
+		rtdServers.error = `couldn't fetch the server list: ${e}`;
+	} finally {
+		rtdServers.loading = false;
+	}
+}
+
 /** The game server token, for the RTD requests. */
 export function gameServerToken(): string {
 	return encodeURIComponent(settings.current.jfGameServerToken.trim());

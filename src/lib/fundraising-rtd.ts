@@ -1,6 +1,6 @@
 import { Dwb } from '$lib/api/dwb/api-dwb';
 import { gameServerToken, updateGameServerStatus } from '$lib/game-server.svelte';
-import { fundraisingState } from '$lib/storage.svelte';
+import { fundraisingState, settings } from '$lib/storage.svelte';
 import { rtdEffects } from '$lib/websockets/jf-rtd/jf-rtd.svelte';
 import type { Donation } from '$lib/types.svelte';
 
@@ -92,7 +92,11 @@ function rtdEffectFor(d: Donation): string | undefined {
 
 async function sendRtdEffect(effect: string) {
 	try {
-		const resp = await fetch(`/api/rtd/${effect}?token=${gameServerToken()}`);
+		// none picked: every server
+		const targets = settings.current.rtdTargetServers.join(',');
+		const resp = await fetch(
+			`/api/rtd/${effect}?token=${gameServerToken()}&targets=${encodeURIComponent(targets)}`
+		);
 		await updateGameServerStatus(resp.clone());
 		if (resp.status !== 204) {
 			console.error(await resp.text());

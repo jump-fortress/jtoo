@@ -209,6 +209,7 @@ export type Settings = {
 	scheduleDay: number; // index into scheduleDays, the sheet tab the schedule scene reads
 	jfRelayWebSocketToken: string;
 	jfGameServerToken: string; // the game server's console token, which RTD effects are sent with
+	rtdTargetServers: string[]; // server tags (eg: AU-SYD1) RTD effects go to. empty: every server
 	logWsMessages: boolean;
 	obsWsIp: string;
 	obsWsPort: number | undefined;

@@ -62,11 +62,18 @@ export class JfRtdWebSocket {
 		this._ws?.addEventListener(type, listener, options);
 	}
 
-	sendRtdEffect(effect: string) {
+	/**
+	 * Sends the effect to the given servers' tags, or every server without any. The console relays
+	 * both kinds to every server: each server's plugin skips targeted commands not meant for it.
+	 */
+	sendRtdEffect(effect: string, targets: string[] = []) {
 		const msgString = JSON.stringify({
+			timestamp: Math.floor(Date.now() / 1000),
 			command: 'sm_rtd ' + effect,
-			server_code: 'admin',
-			type: 'rcon_broadcast'
+			server_code: 'admin', // the sender, not a target
+			...(targets.length > 0
+				? { type: 'rcon_targeted', target: targets }
+				: { type: 'rcon_broadcast' })
 		});
 
 		if (this._ws && this._wsState === WebSocket.OPEN) {
