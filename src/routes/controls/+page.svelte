@@ -307,6 +307,12 @@
 			<ConfirmButton variant="danger" onconfirm={() => ksnWs!.restorePicksAndBans()}
 				>restore last map picks</ConfirmButton
 			>
+			<!-- undoes 'clear mini leaderboard': the current race's board shows again -->
+			<ConfirmButton
+				variant="danger"
+				onconfirm={() => (overlay.current.miniLeaderboardClearedAt = undefined)}
+				>restore mini leaderboard</ConfirmButton
+			>
 			{#if ksnWs.restored !== undefined}
 				<p class="w-full text-center text-ctp-subtext0" aria-live="polite">
 					{ksnWs.restored ? `restored ${ksnWs.restored}` : 'no map picks to restore'}
