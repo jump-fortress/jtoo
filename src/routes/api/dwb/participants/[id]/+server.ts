@@ -1,6 +1,10 @@
-import { dwbParticipantUrl, fresh, uncached } from '$lib/server/dwb';
+import { dwbParticipantUrl, fetchDwbApi, uncached } from '$lib/server/dwb';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ params, fetch }) => {
-	return uncached(await fetch(fresh(dwbParticipantUrl(params.id))));
+export const GET: RequestHandler = async (requestEvent) => {
+	return uncached(
+		await fetchDwbApi({
+			requestEvent
+		})
+	);
 };

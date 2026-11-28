@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { error } from '@sveltejs/kit';
+import { error, type RequestEvent } from '@sveltejs/kit';
 
 /**
  * The upstream DWB url for a participant, plus an optional sub path. The id comes from the
@@ -33,4 +33,26 @@ export function uncached(resp: Response): Response {
 		if (value) headers.set(name, value);
 	}
 	return new Response(resp.body, { status: resp.status, headers });
+}
+
+export async function fetchDwbApi({
+	subPath,
+	requestEvent
+}: {
+	subPath?: string;
+	requestEvent: RequestEvent;
+}) {
+	const { params, url, fetch } = requestEvent;
+	const headers = new Headers();
+	const eTag = requestEvent.request.headers.get('If-None-Match');
+	if (eTag) {
+		headers.set('If-None-Match', eTag);
+	}
+
+	return await fetch(
+		`${dwbParticipantUrl(params.id ?? '', subPath)}?${url.searchParams.toString().replaceAll('+', '%20')}`,
+		{
+			headers
+		}
+	);
 }
