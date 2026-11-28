@@ -18,6 +18,7 @@
 	import type { SteamID3 } from '$lib/types.svelte';
 	import { prSinceClear } from '$lib/components/match/timers-cleared';
 	import { fitText } from '$lib/fit-text';
+	import { isSingleRun } from '$lib/components/match/mini-leaderboard';
 
 	// one scene for both match layouts, so switching between them animates the differences
 	// instead of tearing one scene down and building the other
@@ -35,6 +36,15 @@
 	const massRace = $derived(!!live.currentRace && live.currentRace.mode !== 'duel');
 	// everyone gets one run, so there's no PR or games won to show: the name takes the full height
 	const massSingle = $derived(live.currentRace?.mode === 'mass-single');
+	// a single run race shows one shared timer in the middle of the timer box, leaving its outer
+	// columns empty: the names can run into those
+	const sharedTimer = $derived(
+		settings.current.ksnWebSocketToken !== '' && isSingleRun(live.currentRace)
+	);
+	// the dual layout's player slot width (see the top bar)
+	const dualSlotWidth = $derived(
+		sharedTimer ? 'w-[calc(40.83%-1.18rem)]' : 'w-[calc(22.5%-1.55rem)]'
+	);
 
 	// the name's size, in px for fitText (tailwind's text-6xl, 5xl, 4xl and 3xl at a 16px rem)
 	const TEXT_4XL_PX = 36;
@@ -103,16 +113,17 @@
 	{/if}
 
 	<!-- each player's slot ends 1rem short of the timer box, so a long name fits up to it: single,
-	     the box starts at 46% - 2.5rem; dual, at 22.5%. the percentages are of the bar's width
-	     inside its padding, hence the rem adjustments -->
+	     the box starts at 46% - 2.5rem; dual, at 22.5%, or at its middle column (22.5% + 55% / 3)
+	     when that's all it shows. the box's percentages are of the bar's width with its padding,
+	     the slots' of the bar's width inside it, hence the rem adjustments -->
 	<div
 		class="h-full shrink-0 transition-[width] duration-500
-            {single ? 'w-[calc(46%-3.6rem)]' : 'w-[calc(22.5%-1.55rem)]'}"
+            {single ? 'w-[calc(46%-3.6rem)]' : dualSlotWidth}"
 	>
 		{@render OverlayPlayer(shown.players[0], 0)}
 	</div>
 	{#if !single}
-		<div transition:fade class="h-full w-[calc(22.5%-1.55rem)] shrink-0">
+		<div transition:fade class="h-full shrink-0 transition-[width] duration-500 {dualSlotWidth}">
 			{@render OverlayPlayer(shown.players[1], 1)}
 		</div>
 	{/if}
