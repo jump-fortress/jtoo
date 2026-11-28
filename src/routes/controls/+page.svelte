@@ -283,20 +283,18 @@
 <section class="flex flex-col gap-2">
 	{#if ksnWs}
 		<!-- clear what's on air: outlined in red, and each needs a second click -->
-		<div class="relative m-2 flex w-full max-w-lg flex-wrap justify-center gap-2 self-center">
-			<ConfirmButton
-				variant="danger"
-				onconfirm={() => {
-					// in console time, so it compares with the race's own timestamps
-					overlay.current.timersClearedAt = Date.now() + live.clockOffset;
-				}}>clear timers</ConfirmButton
-			>
+		<div class="relative m-2 grid w-full max-w-lg grid-cols-2 justify-center gap-2 self-center">
 			<ConfirmButton
 				variant="danger"
 				onconfirm={() => {
 					// in console time, like the timers
 					overlay.current.miniLeaderboardClearedAt = Date.now() + live.clockOffset;
 				}}>clear mini leaderboard</ConfirmButton
+			>
+			<ConfirmButton
+				variant="danger"
+				onconfirm={() => (overlay.current.miniLeaderboardClearedAt = undefined)}
+				>restore mini leaderboard</ConfirmButton
 			>
 			<ConfirmButton variant="danger" onconfirm={() => ksnWs!.clearPicksAndBans()}
 				>clear map picks and bans</ConfirmButton
@@ -308,16 +306,19 @@
 				>restore last map picks</ConfirmButton
 			>
 			<!-- undoes 'clear mini leaderboard': the current race's board shows again -->
+
 			<ConfirmButton
 				variant="danger"
-				onconfirm={() => (overlay.current.miniLeaderboardClearedAt = undefined)}
-				>restore mini leaderboard</ConfirmButton
+				onconfirm={() => {
+					// in console time, so it compares with the race's own timestamps
+					overlay.current.timersClearedAt = Date.now() + live.clockOffset;
+				}}>clear timers</ConfirmButton
 			>
-			{#if ksnWs.restored !== undefined}
+			<!-- {#if ksnWs.restored !== undefined}
 				<p class="w-full text-center text-ctp-subtext0" aria-live="polite">
 					{ksnWs.restored ? `restored ${ksnWs.restored}` : 'no map picks to restore'}
 				</p>
-			{/if}
+			{/if} -->
 		</div>
 
 		<!-- MARK: live
