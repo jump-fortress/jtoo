@@ -5,12 +5,15 @@
 	import { sleep } from '$lib/util';
 	import { getFiltersStyle } from '$lib/filters.svelte';
 	import { onDestroy, type Snippet } from 'svelte';
-	import { fade } from 'svelte/transition';
+	import { fade, type TransitionConfig } from 'svelte/transition';
+	import { cubicInOut } from 'svelte/easing';
 	import { fitItems } from '$lib/fit-text';
+	import { rtdEffectFor, rtdEffectLabel } from '$lib/rtd-effect';
 
 	// two donation cards side by side, filling the size the scene gives them: the top donations
 	// (up to five, as many as fit with their full messages) on the left, the latest on the right
-	// (highlighted for a while when it comes in, then joined by the ones before it). compact
+	// (highlighted for a while when it comes in, then joined by the ones before it; a donation
+	// that rolls an RTD effect splits it, the effect showing in a card under it). compact
 	// cards (when the scene is short on room) show just the name and amount. without
 	// recentMessages the recent donations list does too (eg: while map picks show), its text
 	// shrunk a little so three fit. tight cards (eg: while map picks show) have less padding and
@@ -59,6 +62,23 @@
 	let recent = $derived(
 		showRecent ? donations.slice(Math.max(0, shownCount - MAX_RECENT), shownCount).reverse() : []
 	);
+
+	// the effect the latest donation rolled, worked out the same way the controls do when they
+	// send it. shown with the donation, until the next one or the recent donations list
+	let latestRtd = $derived(
+		settings.current.enableFundraisingRtd && latest ? rtdEffectFor(latest) : undefined
+	);
+
+	// opens a card sharing a column with flex-1 by growing its share from nothing (a slide would
+	// animate its height, which flex-1 overrides), its gap above opening with it
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars -- svelte passes the node
+	function grow(_node: Element): TransitionConfig {
+		return {
+			duration: 500,
+			easing: cubicInOut,
+			css: (t) => `flex-grow: ${t}; padding-top: ${t * 0.875}rem`
+		};
+	}
 
 	const iterateDonations = () => settings.current.enableFundraisingDonations;
 
@@ -137,7 +157,8 @@
 	</div>
 	{#if donation.message && message && !compact}
 		<p
-			class="m-0 {lines} text-[1em] {tight
+			class="m-0 {lines} text-[1em]
+                        {tight
 				? 'leading-tight'
 				: 'leading-snug'} wrap-break-word text-ctp-subtext1"
 			style:filter={getFiltersStyle()}
@@ -148,8 +169,8 @@
 {/snippet}
 
 <!-- a card's background and heading, with its content crossfading whenever key changes -->
-{#snippet card(key: string, header: string, peach: boolean, content: Snippet)}
-	<div class="relative isolate min-h-0">
+{#snippet card(key: string, header: string, peach: boolean, content: Snippet, cls = '')}
+	<div class="relative isolate min-h-0 {cls}">
 		<div
 			class="absolute inset-0 -z-1 rounded-[10px] ring-1 transition-colors duration-500 ring-inset
 			{peach ? 'bg-[#1d1410]/92 ring-ctp-peach/70' : 'bg-[#0f0f16]/92 ring-ctp-lavender/35'}"
@@ -227,6 +248,7 @@
 	{#if latest}
 		<!-- one card for both views, so switching between them crossfades -->
 		{@const stacked = recent.length > 1}
+		{@const rtd = stacked ? undefined : latestRtd}
 		{#snippet rightContent()}
 			{#if stacked}
 				<!-- a line of message each. the column wraps, so whichever don't fit fully move into
@@ -255,14 +277,33 @@
 					{/each}
 				</div>
 			{:else}
-				{@render entry(latest!, highlighted, 'line-clamp-2')}
+				<!-- half the height with an rtd card under it, so a line of message -->
+				{@render entry(latest!, highlighted, rtd ? 'line-clamp-1' : 'line-clamp-2')}
 			{/if}
 		{/snippet}
-		{@render card(
-			stacked ? `recent-${latest.id}` : latest.id,
-			stacked ? 'Recent Donations' : 'Latest Donation',
-			highlighted && !stacked,
-			rightContent
-		)}
+		<!-- an rtd donation splits the column in half: the rtd card slides open under the
+		     latest donation, which shrinks to make room (and grows back as it slides shut) -->
+		<div class="flex min-h-0 flex-col">
+			{@render card(
+				stacked ? `recent-${latest.id}` : latest.id,
+				stacked ? 'Recent Donations' : 'Latest Donation',
+				highlighted && !stacked,
+				rightContent,
+				'flex-1'
+			)}
+			{#if rtd}
+				<div class="flex min-h-0 flex-1 flex-col pt-3.5" transition:grow>
+					{#snippet rtdContent()}
+						<div class="flex items-baseline gap-2.5 {tight ? 'leading-tight' : ''}">
+							<span
+								class="truncate text-[1.5em] font-bold text-white"
+								style:filter={getFiltersStyle()}>{rtdEffectLabel(rtd.effect)}</span
+							>
+						</div>
+					{/snippet}
+					{@render card(`rtd-${latest.id}`, 'Roll The Dice', highlighted, rtdContent, 'flex-1')}
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>

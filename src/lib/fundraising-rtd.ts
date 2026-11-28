@@ -1,16 +1,13 @@
 import { Dwb } from '$lib/api/dwb/api-dwb';
 import { gameServerToken, updateGameServerStatus } from '$lib/game-server.svelte';
 import { fundraisingState, settings } from '$lib/storage.svelte';
-import { rtdEffects } from '$lib/websockets/jf-rtd/jf-rtd.svelte';
+import { rtdEffectFor } from '$lib/rtd-effect';
 import type { Donation } from '$lib/types.svelte';
-
-// donations of at least this much roll an RTD effect
-const RTD_AMOUNT = 20;
 
 /**
  * Sends an RTD effect to the game for each new donation of $20 or more: the one the message
- * asks for ('rtd snail'), or a random one. Run it in one place only (the controls), or a
- * donation could fire twice. Returns a function that stops it.
+ * asks for ('rtd snail'), or one picked from its id (see rtdEffectFor). Run it in one place
+ * only (the controls), or a donation could fire twice. Returns a function that stops it.
  */
 export function watchRtdDonations(): () => void {
 	// fundraisingState.current.lastDonationProcessedByRtdId = '';
@@ -49,8 +46,8 @@ export function watchRtdDonations(): () => void {
 					if (stopped) return;
 					// marked before sending, so a donation never fires twice
 					fundraisingState.current.lastDonationProcessedByRtdId = d.id;
-					const effect = rtdEffectFor(d);
-					if (effect) await sendRtdEffect(effect);
+					const rtd = rtdEffectFor(d);
+					if (rtd) await sendRtdEffect(rtd.effect);
 				}
 				// donations that came in while effects were being sent
 				pending = unprocessed(latestDonations);
@@ -79,15 +76,6 @@ export function watchRtdDonations(): () => void {
 		stopped = true;
 		Dwb.unsubscribeFromDonations(donationsSubId);
 	};
-}
-
-function rtdEffectFor(d: Donation): string | undefined {
-	if (d.amount < RTD_AMOUNT) return undefined;
-	const message = d.message?.toLowerCase();
-	return (
-		rtdEffects.find((e) => message?.includes('rtd ' + e) || message?.includes('rtd: ' + e)) ??
-		rtdEffects[Math.floor(Math.random() * rtdEffects.length)]
-	);
 }
 
 async function sendRtdEffect(effect: string) {
