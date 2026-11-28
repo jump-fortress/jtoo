@@ -24,11 +24,11 @@ export function fresh(url: string): string {
 /**
  * A DWB response passed on to the overlay, uncached. DWB marks its responses cacheable for 4
  * hours, which kept browsers (OBS's included) showing old donations; only what the client reads
- * (the body, its type, the status and the ETag) is passed on.
+ * (the body, its type, the status, the ETag, and on a 429 how long to wait) is passed on.
  */
 export function uncached(resp: Response): Response {
 	const headers = new Headers({ 'Cache-Control': 'no-store' });
-	for (const name of ['Content-Type', 'ETag']) {
+	for (const name of ['Content-Type', 'ETag', 'Retry-After']) {
 		const value = resp.headers.get(name);
 		if (value) headers.set(name, value);
 	}
