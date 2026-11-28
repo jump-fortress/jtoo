@@ -4,7 +4,7 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async (requestEvent) => {
 	return uncached(
 		await fetchDwbApi({
-			subPath: '/donations',
+			subPath: '/milestones',
 			requestEvent
 		})
 	);
