@@ -21,5 +21,14 @@
 
 - In connections set the jf relay websocket plugin token, and enable fundraising RTD
 - RTD runs from the controls page, so keep it open
-- Enable the commented out lines in src/lib/fundraising-rtd.ts
-- Set a donation's amount to at least 20 and the message to 'rtd snail' for example
+- Quickest: in fundraising's advanced settings, tick "test donations". A fake $10-45 donation in
+  DWB's api format, with a random RTD effect in its message, comes in every 0-30s (logged in the
+  controls' console). It goes through the same conversion, OpenAI moderation, overlay donation
+  cards and RTD as a real one, on every page open in the same browser. It isn't saved and the
+  checkbox resets on reload. It skips DWB's api, so it doesn't test fetching or caching, and the
+  totals and rocket bar don't move
+- Before going live, set `TEST_DONATIONS_ALLOWED` to false in
+  src/lib/api/dwb/dwb-test-donations.svelte.ts: it hides the checkbox and ignores fake donations
+- Or, to test a real donation's path: enable the commented out lines in
+  src/lib/fundraising-rtd.ts, and set a donation's amount to at least 20 and the message to
+  'rtd snail' for example

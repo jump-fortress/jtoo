@@ -55,6 +55,11 @@
 	import { onMount, setContext, untrack } from 'svelte';
 	import { JFRelayWebSocket } from '$lib/websockets/jf-relay/js-relay.svelte';
 	import { watchRtdDonations } from '$lib/fundraising-rtd';
+	import {
+		startTestDonations,
+		TEST_DONATIONS_ALLOWED,
+		testDonations
+	} from '$lib/api/dwb/dwb-test-donations.svelte';
 	import { connectGameServer } from '$lib/game-server.svelte';
 	import { syncBracketResults } from '$lib/bracket-live.svelte';
 	import MatchScore from '$lib/components/controls/MatchScore.svelte';
@@ -244,6 +249,11 @@
 		// anywhere else as well, a donation could fire twice
 		$effect(() => {
 			if (rtdEnabled) return untrack(watchRtdDonations);
+		});
+
+		// TEST ONLY: fake donations for every page, made up here so there's only one source
+		$effect(() => {
+			if (TEST_DONATIONS_ALLOWED && testDonations.enabled) return startTestDonations();
 		});
 
 		return () => live.close();

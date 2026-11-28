@@ -2,6 +2,7 @@ import { fundraisingState } from '$lib/storage.svelte';
 import type { DonationsOverview, Donation, DonationMilestone, Subscriber } from '$lib/types.svelte';
 import { deepCopy, sleep } from '$lib/util';
 import { Moderation } from '../moderation/api-moderation';
+import { onTestDonation } from './dwb-test-donations.svelte';
 import { createRateLimitedApi } from '../rate-limited-api';
 
 export namespace Dwb {
@@ -18,6 +19,13 @@ export namespace Dwb {
 	// undefined until the first fetch, so new subscribers aren't handed a made-up $0 overview
 	let overview: DonationsOverview | undefined;
 	let donations: Donation[] = fundraisingState.current.donations;
+	// what subscribers get: the donations above, plus any test donations (see
+	// dwb-test-donations), in the order they came in. kept apart so test donations are never
+	// saved or counted in the fetch offset, which would skip real donations
+	let shownDonations: Donation[] = donations;
+	// test donations wait for the first fetch: one landing before it would put the whole
+	// history after it, so everything would look new
+	let donationsFetched = false;
 	let milestones: DonationMilestone[] = [];
 
 	function overviewCopy() {
@@ -25,8 +33,16 @@ export namespace Dwb {
 	}
 
 	function donationsCopy() {
-		return deepCopy(donations);
+		return deepCopy(shownDonations);
 	}
+
+	// TEST ONLY: fake donations go through the same conversion and moderation as fetched ones
+	onTestDonation(async (dwbDonation) => {
+		if (donationsSubscribers.length === 0 || !donationsFetched) return;
+		const moderated = await Moderation.moderateDonations([toDonation(dwbDonation)]);
+		shownDonations = shownDonations.concat(moderated);
+		donationsSubscribers.forEach((s) => s.handler(donationsCopy()));
+	});
 
 	function milestonesCopy() {
 		return deepCopy(milestones);
@@ -127,23 +143,22 @@ export namespace Dwb {
 				`${participantEndpoint()}/donations?offset=${donations.length}&orderBy=createdDateUTC%20ASC`,
 			modelName: 'donations',
 			fetchUntil: () => donationsSubscribers.length > 0,
+			// dwb answers 204 when there's nothing new, which skips the callback
+			onAnswered: () => (donationsFetched = true),
 			callback: async (dwbDonations) => {
 				const eTag = eTags.get('donations');
 				if (!eTag || eTag === lastETag) return;
 
-				const newDonations = dwbDonations.map((d) => ({
-					id: d.donationID,
-					name: d.displayName,
-					amount: d.amount,
-					message: d.message,
-					createdAt: d.createdDateUTC
-				}));
+				const newDonations = dwbDonations.map(toDonation);
 
 				if (newDonations.length === 0) return;
 
 				const newDonationIds = newDonations.map((d) => d.id);
 				const moderatedDonations = await Moderation.moderateDonations(newDonations);
 				donations = donations
+					.filter((d) => !newDonationIds.includes(d.id))
+					.concat(moderatedDonations);
+				shownDonations = shownDonations
 					.filter((d) => !newDonationIds.includes(d.id))
 					.concat(moderatedDonations);
 
@@ -183,11 +198,14 @@ export namespace Dwb {
 		endpoint,
 		modelName,
 		fetchUntil,
+		onAnswered,
 		callback
 	}: {
 		endpoint: () => string;
 		modelName: DwbModelName;
 		fetchUntil: () => boolean;
+		// after any successful answer, new data or not (200, 204 or 304)
+		onAnswered?: () => void;
 		callback: (result: TDwbModel) => void | Promise<void>;
 	}) {
 		if (fetching.has(modelName)) {
@@ -205,6 +223,7 @@ export namespace Dwb {
 			try {
 				const resp = await fetchDwb(endpoint(), eTags.get(modelName));
 				if (resp.status === 304 || resp.status === 204) {
+					onAnswered?.();
 					await sleep(fetchInterval);
 					continue;
 				}
@@ -216,6 +235,7 @@ export namespace Dwb {
 
 				const result = (await resp.json()) as TDwbModel;
 				await callback(result);
+				if (resp.ok) onAnswered?.();
 			} catch (err) {
 				console.error(`dwb: fetching ${modelName} failed`, err);
 			}
@@ -224,6 +244,16 @@ export namespace Dwb {
 		}
 
 		fetching.delete(modelName);
+	}
+
+	function toDonation(d: DwbDonation): Donation {
+		return {
+			id: d.donationID,
+			name: d.displayName,
+			amount: d.amount,
+			message: d.message,
+			createdAt: d.createdDateUTC
+		};
 	}
 
 	function removeById(arr: { id: string }[], id: string) {
@@ -241,7 +271,7 @@ export namespace Dwb {
 		numDonations: number;
 	};
 
-	type DwbDonation = {
+	export type DwbDonation = {
 		donationID: string;
 		displayName: string;
 		message: string;

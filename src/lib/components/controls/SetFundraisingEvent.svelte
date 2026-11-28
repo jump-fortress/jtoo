@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { TEST_DONATIONS_ALLOWED, testDonations } from '$lib/api/dwb/dwb-test-donations.svelte';
 	import { defaultFundraisingState, fundraisingState, settings } from '$lib/storage.svelte';
 	import type { FeedState } from '$lib/websockets/console/console-live.svelte';
 	import Checkbox from './Checkbox.svelte';
@@ -77,10 +78,23 @@
 			<input
 				type="number"
 				min="0"
-				class="input remove-arrow w-7 accent-ctp-lavender"
+				class="remove-arrow w-7 input accent-ctp-lavender"
 				bind:value={settings.current.fundraisingShowDonationSeconds}
 			/>
 			<span>seconds to show each donation for</span>
 		</label>
+		{#if TEST_DONATIONS_ALLOWED}
+			<!-- TEST ONLY. not a saved setting, so a reload always turns it off -->
+			<label>
+				<input
+					class="peer size-4 accent-ctp-lavender"
+					type="checkbox"
+					bind:checked={testDonations.enabled}
+				/>
+				<span class="peer-not-checked:text-ctp-overlay2">
+					test donations: a fake donation with a random RTD effect every 0-30s
+				</span>
+			</label>
+		{/if}
 	{/snippet}
 </ConnectionPanel>
