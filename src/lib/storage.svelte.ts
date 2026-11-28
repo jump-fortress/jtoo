@@ -15,6 +15,7 @@ import { Tempus2 } from './api/tempus2/api-tempus2';
 import { Steam } from './api/steam/api-steam';
 import { TempusPlaza } from './api/tempusplaza/api-tempusplaza';
 import type { KSN } from './websockets/ksn/ws-ksn-types.svelte';
+import { rjrPlayoffs } from './rjr-playoffs'; // TEMPORARY: remove after the event
 
 export const defaultStages: Array<string> = [
 	'',
@@ -76,14 +77,14 @@ export const defaultOverlay: Overlay = {
 	stage: '',
 	tournament: '',
 	leaderboardView: 'standings',
-	bracket: ''
+	bracket: rjrPlayoffs.id // TEMPORARY: '' after the event
 };
 
 export const defaultItems: Items = {
 	players: [new Player()],
 	maps: [new TFMap()],
 	stages: defaultStages,
-	brackets: []
+	brackets: [rjrPlayoffs] // TEMPORARY: [] after the event
 };
 
 export const defaultFundraisingState: FundraisingState = {
@@ -174,6 +175,17 @@ export const fundraisingState = new PersistentState(
 addMissingDefaults(settings, defaultSettings);
 addMissingDefaults(overlay, defaultOverlay);
 addMissingDefaults(fundraisingState, defaultFundraisingState);
+
+// TEMPORARY: browsers with items saved before the RJR Playoffs bracket was a default don't get it
+// from the defaults, so add it to theirs, and show it if no bracket is picked. Remove after the event
+if (typeof localStorage !== 'undefined') {
+	if (!items.current.brackets?.some((b) => b.id == rjrPlayoffs.id))
+		items.current = {
+			...items.current,
+			brackets: [...(items.current.brackets ?? []), structuredClone(rjrPlayoffs)]
+		};
+	if (!overlay.current.bracket) overlay.current = { ...overlay.current, bracket: rjrPlayoffs.id };
+}
 
 // the settings that only change how the overlay looks and behaves (the controls' overlay visuals
 // and fundraising settings); tokens, connections, scenes and automation are left alone
