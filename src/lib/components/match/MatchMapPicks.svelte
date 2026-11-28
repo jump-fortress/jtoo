@@ -4,7 +4,7 @@
 	import PickAvatar from '$lib/components/maps/PickAvatar.svelte';
 	import { fitText } from '$lib/fit-text';
 	import { getFiltersStyle } from '$lib/filters.svelte';
-	import { mapName, seriesOf, showsMapPicks, teamOutline } from '$lib/map-picks';
+	import { mapName, seriesOf, showsMapPicks, type Actor } from '$lib/map-picks';
 	import { overlay, settings } from '$lib/storage.svelte';
 	import { getMap } from '$lib/util';
 	import type { KSNWebSocket } from '$lib/websockets/ksn/ws-ksn.svelte';
@@ -13,6 +13,10 @@
 	// with the map being played lit and the rest dimmed. One row of cards, sized by the scene
 	type Props = { class?: string };
 	let { class: styleClass = '' }: Props = $props();
+
+	// the pickers' outlines, drawn inside the cards' edges like the decider's, so every card's
+	// edge is where its outline is and the cards line up with whatever's beside them
+	const teamRing: Record<Actor, string> = { A: 'ring-ctp-blue', B: 'ring-ctp-red' };
 
 	let ksnWs: KSNWebSocket = getContext('ksnWs');
 
@@ -48,7 +52,7 @@
 {#if showsMapPicks(session)}
 	<div
 		transition:fade
-		class="{styleClass} grid gap-3.5 p-0.75"
+		class="{styleClass} grid gap-3.5"
 		style:grid-template-columns="repeat({cards.length}, minmax(0, 1fr))"
 	>
 		{#each cards as card, i (card.key)}
@@ -57,7 +61,6 @@
 			<div
 				class={[
 					'relative min-w-0 overflow-hidden rounded-xl transition-opacity duration-500',
-					card.actor && ['outline-3', teamOutline[card.actor]],
 					{ 'opacity-60': dimmed }
 				]}
 			>
@@ -100,9 +103,16 @@
 						</span>
 					{/if}
 				</div>
-				<!-- a decider's outline is its own layer, so the filters tint it without tinting the
-				     map -->
-				{#if !card.actor}
+				<!-- the outline is its own layer over the map, as an inset ring on the card would sit
+				     under it. a decider's is tinted by the filters, without tinting the map; the
+				     pickers' team colours aren't -->
+				{#if card.actor}
+					<div
+						class="pointer-events-none absolute inset-0 rounded-xl ring-3 ring-inset {teamRing[
+							card.actor
+						]}"
+					></div>
+				{:else}
 					<div
 						class="pointer-events-none absolute inset-0 rounded-xl ring-3 ring-ctp-lavender ring-inset"
 						style:filter={getFiltersStyle()}

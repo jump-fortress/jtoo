@@ -34,7 +34,8 @@
 </script>
 
 <!-- the columns are spaced with margins, not a gap, so the leaderboard's space (its width and
-     margin) can slide away to nothing as it hides -->
+     margin) can slide away to nothing as it hides. every panel is 3.5 (14px) from the next, the
+     same as the donation cards from each other -->
 <div class="flex min-h-0 w-full flex-1 px-4 py-2">
 	<!-- kept clear for a twitch chat browser source -->
 	<div class="mr-6 w-100 shrink-0"></div>
@@ -43,7 +44,7 @@
 	     shut, and the fundraising side (donations, totals, map picks) grows and shrinks with it -->
 	{#if !hideLeaderboard}
 		<div
-			class="mr-6 flex w-130 shrink-0"
+			class="mr-3.5 flex w-130 shrink-0"
 			transition:slide={{ axis: 'x', duration: 500, easing: cubicInOut }}
 		>
 			<!-- full width while the column narrows, so it's clipped rather than squashed -->
