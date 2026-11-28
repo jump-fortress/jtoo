@@ -1,6 +1,6 @@
 # Setup
 
-- In .env set DWB_API_URL=https://testdrive.donordrive.com/api
+- In .env set DWB_API_URL=https://testdrive.donordrive.com/api/1.3
 - In controls set fundraising event to https://events.doctorswithoutborders.org/participants/4715
 
 ## Testing donation messages
