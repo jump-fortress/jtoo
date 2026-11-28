@@ -12,7 +12,7 @@ import type { Dwb } from './api-dwb';
 type DwbDonation = Dwb.DwbDonation;
 
 // set to false before going live: hides the checkbox and ignores any broadcast fake donations
-export const TEST_DONATIONS_ALLOWED = true;
+export const TEST_DONATIONS_ALLOWED = false;
 
 // a fake donation comes in every 0 to this many ms
 const MAX_GAP_MS = 30_000;
