@@ -227,33 +227,27 @@
 					</div>
 
 					<!-- MARK: recent donations -->
-					<div class="flex min-w-0 flex-1 flex-col gap-4">
-						<span
-							class="text-2xl tracking-[0.16em] text-ctp-subtext0 uppercase"
-							style:filter={getFiltersStyle()}>Recent donations</span
-						>
-						{#if recent.length}
-							<div
-								class="min-h-0 flex-1 overflow-hidden
+					{#if recent.length}
+						<div
+							class="mt-8 max-h-108 min-h-0 flex-1 self-center overflow-hidden
                                                                 {scrolling
-									? 'mask-t-from-92% mask-t-to-100% mask-b-from-80% mask-b-to-100%'
-									: ''}"
-								bind:clientHeight={viewHeight}
-							>
-								<!-- two copies of the list, so the first loops back in under the second -->
-								<div style:transform="translateY({-offset}px)">
-									<ul class="flex flex-col gap-1 pb-1" bind:offsetHeight={copyHeight}>
+								? 'mask-t-from-92% mask-t-to-100% mask-b-from-80% mask-b-to-100%'
+								: ''}"
+							bind:clientHeight={viewHeight}
+						>
+							<!-- two copies of the list, so the first loops back in under the second -->
+							<div style:transform="translateY({-offset}px)">
+								<ul class="flex flex-col gap-1 pb-1" bind:offsetHeight={copyHeight}>
+									{@render recentRows()}
+								</ul>
+								{#if scrolling}
+									<ul class="flex flex-col gap-1 pb-1" aria-hidden="true">
 										{@render recentRows()}
 									</ul>
-									{#if scrolling}
-										<ul class="flex flex-col gap-1 pb-1" aria-hidden="true">
-											{@render recentRows()}
-										</ul>
-									{/if}
-								</div>
+								{/if}
 							</div>
-						{/if}
-					</div>
+						</div>
+					{/if}
 
 					{#snippet recentRows()}
 						{#each recent as d (d.id)}
@@ -268,17 +262,9 @@
 						{/each}
 					{/snippet}
 
-					<!-- a donation's avatar, name, accepted message and amount -->
+					<!-- a donation's name, accepted message and amount -->
 					{#snippet donationRow(d: Donation, large = false)}
 						{@const message = d.message ? d.message : ''}
-						<span
-							class="flex shrink-0 items-center justify-center bg-ctp-lavender/15 font-bold text-ctp-lavender uppercase {large
-								? 'size-14 rounded-xl text-3xl'
-								: 'size-11 rounded-lg text-2xl'}"
-							style:filter={getFiltersStyle()}
-						>
-							{(d.name || 'A')[0]}
-						</span>
 						<div class="flex min-w-0 grow flex-col">
 							<span class="truncate leading-tight text-white {large ? 'text-4xl' : 'text-3xl'}">
 								{d.name || 'Anonymous'}
