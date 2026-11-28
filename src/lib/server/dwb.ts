@@ -49,10 +49,9 @@ export async function fetchDwbApi({
 		headers.set('If-None-Match', eTag);
 	}
 
-	return await fetch(
-		`${dwbParticipantUrl(params.id ?? '', subPath)}?${url.searchParams.toString().replaceAll('+', '%20')}`,
-		{
-			headers
-		}
-	);
+	// URLSearchParams encodes spaces as +, DWB wants %20. no query: no trailing ?
+	const query = url.searchParams.toString().replaceAll('+', '%20');
+	return await fetch(`${dwbParticipantUrl(params.id ?? '', subPath)}${query ? '?' + query : ''}`, {
+		headers
+	});
 }
