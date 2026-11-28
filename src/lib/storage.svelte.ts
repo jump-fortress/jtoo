@@ -91,7 +91,6 @@ export const defaultFundraisingState: FundraisingState = {
 	eventUrl: 'https://events.doctorswithoutborders.org/campaigns/Jump-Fortress-DWB-event',
 	lastDonationProcessedByDonationsId: '',
 	lastDonationProcessedByMessagesId: '',
-	lastDonationProcessedByRtdId: '',
 	donations: [],
 	displayedDonations: [],
 	stage: 0,

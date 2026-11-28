@@ -1,6 +1,6 @@
 import { Dwb } from '$lib/api/dwb/api-dwb';
 import { gameServerToken, updateGameServerStatus } from '$lib/game-server.svelte';
-import { fundraisingState, settings } from '$lib/storage.svelte';
+import { settings } from '$lib/storage.svelte';
 import { rtdEffectFor } from '$lib/rtd-effect';
 import type { Donation } from '$lib/types.svelte';
 
@@ -10,7 +10,7 @@ import type { Donation } from '$lib/types.svelte';
  * only (the controls), or a donation could fire twice. Returns a function that stops it.
  */
 export function watchRtdDonations(): () => void {
-	// fundraisingState.current.lastDonationProcessedByRtdId = '';
+	// setCursor('');
 	const startedAt = Date.now();
 	let latestDonations: Donation[] = [];
 	let processing = false;
@@ -45,7 +45,7 @@ export function watchRtdDonations(): () => void {
 					// a restarted watcher has its own loop
 					if (stopped) return;
 					// marked before sending, so a donation never fires twice
-					fundraisingState.current.lastDonationProcessedByRtdId = d.id;
+					setCursor(d.id);
 					const rtd = rtdEffectFor(d);
 					if (rtd) await sendRtdEffect(rtd.effect);
 				}
@@ -58,16 +58,14 @@ export function watchRtdDonations(): () => void {
 	}
 
 	function unprocessed(donations: Donation[]): Donation[] {
-		let idx = donations.findIndex(
-			(d) => d.id === fundraisingState.current.lastDonationProcessedByRtdId
-		);
+		let idx = donations.findIndex((d) => d.id === getCursor());
 		if (idx === -1) {
 			// no record of what was processed (rtd just enabled, a new event or cleared storage):
 			// treat donations from before this started as processed, so old ones don't fire again.
 			// the list is oldest first; a donation without a valid date counts as old
 			idx = donations.findLastIndex((d) => !(Date.parse(d.createdAt ?? '') >= startedAt));
 			// saved straight away, so later updates match by id instead of by date
-			if (idx > -1) fundraisingState.current.lastDonationProcessedByRtdId = donations[idx].id;
+			if (idx > -1) setCursor(donations[idx].id);
 		}
 		return donations.slice(idx + 1);
 	}
@@ -76,6 +74,28 @@ export function watchRtdDonations(): () => void {
 		stopped = true;
 		Dwb.unsubscribeFromDonations(donationsSubId);
 	};
+}
+
+// the last donation sent (or skipped), so a reload doesn't fire old donations again. saved under
+// its own key, which only this writes: kept in fundraisingState, the overlay saving that whole
+// state (eg: its donation cards' place) could put back an older id from its copy, and the
+// donations after it would fire twice
+const CURSOR_KEY = 'lastDonationProcessedByRtdId';
+
+function getCursor(): string {
+	try {
+		return localStorage.getItem(CURSOR_KEY) ?? '';
+	} catch {
+		return '';
+	}
+}
+
+function setCursor(id: string) {
+	try {
+		localStorage.setItem(CURSOR_KEY, id);
+	} catch {
+		// storage unavailable: a reload may fire the latest donations again
+	}
 }
 
 async function sendRtdEffect(effect: string) {
